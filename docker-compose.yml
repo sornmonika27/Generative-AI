@@ -1,0 +1,34 @@
+# services:
+#   express-app:
+#     build: .
+#     container_name: express-container
+#     ports:
+#       - "3000:3000"  # Map host port 3000 to container port 3000
+#     environment:
+#       DB_HOST: ${DB_HOST}
+#       DB_PORT: ${DB_PORT}
+#       DB_USERNAME: ${DB_USERNAME}
+#       DB_PASSWORD: ${DB_PASSWORD}
+#       DB_DATABASE: ${DB_DATABASE}
+#       NODE_ENV: ${NODE_ENV}
+#       JWT_SECRET: ${JWT_SECRET}
+
+
+version: '3'
+services:
+  express-app:
+    build: .
+    container_name: express-container
+    ports:
+      - "3000:3000"  # Map host port 3000 to container port 3000
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      NODE_ENV: ${NODE_ENV}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - .:/usr/src/app        # Mount the current directory to /usr/src/app in the container
+      - /usr/src/app/node_modules  # Avoid overwriting node_modules in the container
