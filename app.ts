@@ -10,11 +10,17 @@ import swaggerJsDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import swaggerOptions from './swagger';
 import chat from './src/routes/chat'
+import cors from "cors";
 
 
 // Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })) // for form data
+var corsOptions = {
+  origin: "*",
+};
+
+app.use(cors(corsOptions));
 
 // Swagger setup
 const swaggerSpec = swaggerJsDoc(swaggerOptions);

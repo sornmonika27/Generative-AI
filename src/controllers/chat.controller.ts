@@ -15,9 +15,6 @@ export const askQuery = async (req: Request, res: Response) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
     
-        // Send an initial data packet to indicate streaming has started
-        res.write('data: Streaming started\n\n');
-    
         // Stream data from Ollama
         const stream = await ollama.chat({
           model: 'llama3.2',
@@ -28,12 +25,11 @@ export const askQuery = async (req: Request, res: Response) => {
         for await (const chunk of stream) {
           if (chunk.message && chunk.message.content) {
             // Send each chunk of the response as an event
-            res.write(`data: ${JSON.stringify({ reply: chunk.message.content })}\n\n`);
+            res.write(chunk.message.content);
           }
         }
     
         // Close the stream once finished
-        res.write('data: [DONE]\n\n');
         res.end();
     }else {
         const response = await ollama.chat({
