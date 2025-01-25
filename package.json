@@ -7,7 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec ts-node app.ts",
     "migration:generate": "typeorm-ts-node-commonjs -d ./src/config/data-source.ts migration:generate ./src/config/migrations/Default",
-    "migration:run": "typeorm-ts-node-commonjs -d ./src/config/data-source.ts migration:run"
+    "migration:run": "typeorm-ts-node-commonjs -d ./src/config/data-source.ts migration:run",
+    "schema:log": "typeorm schema:log -d ./src/config/data-source.ts",
+    "typeorm": "typeorm-ts-node-commonjs"
   },
   "author": "",
   "license": "ISC",

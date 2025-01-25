@@ -8,8 +8,7 @@ import {
     OneToMany,
   } from "typeorm";
   import { RoleEnum } from "../common/types/enum";
-  
-  @Entity({ name: "User_Info" })
+@Entity({ name: "user_info" })
   export class UserInfo {
     @PrimaryGeneratedColumn("uuid")
     id: string;

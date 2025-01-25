@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import ollama from 'ollama';
+import { ollamaNoStream, ollamaStream } from "../service/ollamaChat";
 
 export const askQuery = async (req: Request, res: Response) => {
   const { query, isStream = false } = req.body;
@@ -10,32 +11,9 @@ export const askQuery = async (req: Request, res: Response) => {
 
   try {
     if(isStream){
-        // Start streaming the response to the client
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-    
-        // Stream data from Ollama
-        const stream = await ollama.chat({
-          model: 'llama3.2',
-          messages: [{ role: 'user', content: query }],
-          stream: true
-        });
-    
-        for await (const chunk of stream) {
-          if (chunk.message && chunk.message.content) {
-            // Send each chunk of the response as an event
-            res.write(chunk.message.content);
-          }
-        }
-    
-        // Close the stream once finished
-        res.end();
+        await ollamaStream([{role: 'user', content: query}], res)
     }else {
-        const response = await ollama.chat({
-            model: 'llama3.2',
-            messages: [{ role: 'user', content: query }],
-          });
+        const response  = await ollamaNoStream([{role: 'user', content: query}])
         res.status(200).json({ response: response.message.content }); 
     }
   } catch (error) {
