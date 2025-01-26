@@ -5,8 +5,10 @@ import {
     OneToMany,
     CreateDateColumn,
     UpdateDateColumn,
+    ManyToOne,
   } from "typeorm";
   import { Milestone } from "./milestone.entity";
+import { UserInfo } from "./user.entity";
   
   @Entity({ name: "roadmaps" })
   export class Roadmap {
@@ -20,6 +22,11 @@ import {
       cascade: true, // Automatically save related milestones
     })
     milestones: Milestone[];
+
+    @ManyToOne(() => UserInfo, (user) => user.roadmaps, {
+        onDelete: "CASCADE", // Delete roadmaps if the user is deleted
+      })
+      user: UserInfo;
   
     @CreateDateColumn()
     createdAt: Date;

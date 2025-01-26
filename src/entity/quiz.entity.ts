@@ -6,6 +6,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
   } from "typeorm";
+import { UserInfo } from "./user.entity";
   
   @Entity({ name: "quizzes" })
   export class Quiz {
@@ -20,6 +21,11 @@ import {
   
     @Column({ nullable: false })
     correctAnswer: string;
+
+    @ManyToOne(() => UserInfo, (user) => user.quizzes, {
+        onDelete: "CASCADE", // Delete quizzes if the user is deleted
+      })
+      user: UserInfo;
   
     @CreateDateColumn()
     createdAt: Date;
