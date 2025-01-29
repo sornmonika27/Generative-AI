@@ -13,6 +13,7 @@ import chat from './src/routes/chat'
 import cors from "cors";
 import quiz from "./src/routes/quiz"
 import roadmap from "./src/routes/roadmap"
+import { getAllRoadmap, getRoadmapById } from './src/controllers/Testroudmap.controller';
 
 // Middleware setup
 app.use(express.json());
@@ -31,7 +32,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', auth)
 app.use('/api/chat', chat)
 app.use('/api/roadmap', quiz)
-app.use('/api/roadmap', roadmap)
+app.use('/api/roadmap', roadmap, getAllRoadmap, getRoadmapById)
 
 
 // Start server
