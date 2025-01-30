@@ -7,15 +7,16 @@ import { extractArrayRoadmap } from "../utils/extractArray";
 import { ollamaNoStream } from "../service/ollamaChat";
 
 export const roadmap = async (req: Request, res: Response) => {
-    // We got the goal from postman
+    // We got the goal from Postman (client request)
     const { goal } = req.body;
-    console.log(goal)
-    // (roadmapRepo, userInfo, milestone)  we use to connect from the model
+    console.log(goal);
+    
+    // (roadmapRepo, userInfo, milestone) are repositories that connect to the database tables
     const roadmapRepo = AppDataSource.getRepository(Roadmap);
     const userInfo = AppDataSource.getRepository(UserInfo);
-    const milestone = AppDataSource.getRepository(Milestone);
+    const milestoneRepo = AppDataSource.getRepository(Milestone);
 
-    // this line if not goal it's will return 404 message goal is required
+    // If goal is missing, return a 404 error with a message
     if (!goal) {
         return res.status(404).json({
             message: "Goal is required"
@@ -23,73 +24,76 @@ export const roadmap = async (req: Request, res: Response) => {
     }
 
     try {
-        // This line it's find id user for know who inpu or search this title        
-        const user = await userInfo.findOne ({where:{id: req.user?.id}});
-        // if not user it's will respons User not fonud
-        if(!user){
+        // Find the user by their ID to know who is making this request
+        const user = await userInfo.findOne({ where: { id: req.user?.id } });
+        
+        // If user not found, return an error response
+        if (!user) {
             return res.status(404).json({
-                message:"User not fonud"
+                message: "User not found"
             });
         }
-        // This line it store the new data from the user when thet input the new data like searching new this example How 
-        // Class is a blueprint and new mean create new object
-        // object is a instance of class 
+        
+        // Create a new roadmap instance (object) for this goal
         const newRoadmap = new Roadmap();
-        // This line take user from model or entity by the table
-        // user we call property
-        newRoadmap.user = user;
-        newRoadmap.title = goal;
-        await roadmapRepo.save(newRoadmap);
+        newRoadmap.user = user; // Associate roadmap with user
+        newRoadmap.title = goal; // Set the title of the roadmap
+        await roadmapRepo.save(newRoadmap); // Save the new roadmap to the databasez
 
+        // AI-generated milestones
         const query = `
             You are a helpful software development assistant. I want you to create a learning roadmap in the form of an array of objects. Each object should contain two properties: 
-        
-'title': A milestone or step in the roadmap.
-'description': A detail (50 words) description of that step.
+            'title': A milestone or step in the roadmap.
+            'description': A detailed (50-word) description of that step.
+            Your response should only be in this format without any extra text outside of the array.
+            [
+                {
+                    "title": "Step 1 Title",
+                    "description": "Step 1 Description"
+                },
+                {
+                    "title": "Step 2 Title",
+                    "description": "Step 2 Description"
+                }
+            ]
+            Now, create a ${goal} roadmap.
+        `;
 
-        Your response only be in this format without any other text outside of array
-        [
-        {
-            "title": "Step 1 Title",
-            "description": "Step 1 Description"
-        },
-        {
-            "title": "Step 2 Title",
-            "description": "Step 2 Description"
-        }
-        ]
-
-        Now, create a ${goal} roadmap.
-        `
-
-        const respones = await ollamaNoStream([{role: 'user', content: query}]);
-        const milestoneArray = extractArrayRoadmap(respones.message.content) ?? []
+        // Call AI service to generate milestones based on the goal
+        const response = await ollamaNoStream([{ role: 'user', content: query }]);
+        const milestoneArray = extractArrayRoadmap(response.message.content) ?? [];
 
         console.log(milestoneArray);
 
-        for(const item of milestoneArray){
-            const Newmilestone = new Milestone();
-            Newmilestone.roadmap = newRoadmap;
-            Newmilestone.title = item.title;
-            Newmilestone.description = item.description
-            await milestone.save(Newmilestone);
-        }
-        
+        const milestones = [];
+        for (const item of milestoneArray) {
+            const newMilestone = new Milestone();
+            newMilestone.roadmap = newRoadmap; // Link milestone to the roadmap
+            newMilestone.title = item.title;
+            newMilestone.description = item.description;
+            await milestoneRepo.save(newMilestone); // Save milestone to the database
 
-        // This line use to respones data when it's successfully 
+            // Formatting milestone object correctly
+            milestones.push({
+                milestoneId: newMilestone.id.toString(), // Convert ID to string
+                title: newMilestone.title,
+                description: newMilestone.description
+            });
+        }
+        console.log("::::::::::::", milestones);
+        
+        // Return success response with roadmap details
         return res.status(200).json({
-           "roadmapId": newRoadmap.id,
-           "title": newRoadmap.title,
-           "milestone": newRoadmap.milestones
+            roadmapId: newRoadmap.id.toString(), // Convert ID to string
+            title: newRoadmap.title,
+            milestones: milestones // Send formatted milestones array
         });
-    }catch (error) {
+        
+    } catch (error) {
         console.error(error);
         return res.status(500).json({ error: "Internal server error" });
     }
 };
-
-
-
 
 export const getAllRoadmap = async (req: Request, res: Response) => {
     const roadmapRepo = AppDataSource.getRepository(Roadmap);
@@ -97,7 +101,7 @@ export const getAllRoadmap = async (req: Request, res: Response) => {
     try {
         // Fetch all roadmaps with their milestones
         const roadmaps = await roadmapRepo.find({
-            relations: ["milestones"] // Ensure milestones are included
+            relations: ["milestones"] // Ensure milestones are included in the response
         });
 
         return res.status(200).json({
@@ -119,23 +123,80 @@ export const getAllRoadmap = async (req: Request, res: Response) => {
     }
 };
 
-export const getRoadmapById = async (req:Request, res: Response) =>{
-    const {id} = req.body;
-    const roadmapRepo = AppDataSource.getMongoRepository(Roadmap);
-    try{
-        const roadmap = await roadmapRepo.findOneBy({id: parseInt(id)});
-        if (!roadmap){
-            return res.status(404).json({
-                message: "Roadmap not found"
-            })
-        }
-        return res.status(200).json({
-            message: "Roadmap fetched successfully",
-            roadmap,
+export const getRoadmapById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const roadmapRepo = AppDataSource.getRepository(Roadmap);
+
+    try {
+        // Find a roadmap by its ID, including milestones
+        const roadmap = await roadmapRepo.findOne({
+            where: { id: String(id) },
+            relations: ["milestones"]
         });
-    }catch (error) {
+
+        if (!roadmap) {
+            return res.status(404).json({ message: "Roadmap not found" });
+        }
+
+        return res.status(200).json({
+            id: roadmap.id,
+            title: roadmap.title,
+            milestones: roadmap.milestones.map(milestone => ({
+                id: milestone.id,
+                title: milestone.title,
+                description: milestone.description
+            }))
+        });
+    } catch (error) {
         console.error(error);
         return res.status(500).json({ error: "Internal server error" });
     }
+};
 
-}
+export const deleteRoadmap = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const roadmapRepo = AppDataSource.getRepository(Roadmap);
+
+    try {
+        // Find the roadmap by ID
+        const roadmap = await roadmapRepo.findOne({ where: { id: String(id) } });
+        
+        if (!roadmap) {
+            return res.status(404).json({ message: "Roadmap not found" });
+        }
+
+        // Delete the roadmap
+        await roadmapRepo.remove(roadmap);
+        return res.status(200).json({ message: "Roadmap deleted successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const updateRoadmap = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title } = req.body;
+    const roadmapRepo = AppDataSource.getRepository(Roadmap);
+
+    if (!title) {
+        return res.status(400).json({ message: "Title is required" });
+    }
+
+    try {
+        // Find the roadmap by ID
+        const roadmap = await roadmapRepo.findOne({ where: { id: String(id) } });
+
+        if (!roadmap) {
+            return res.status(404).json({ message: "Roadmap not found" });
+        }
+
+        // Update the roadmap title
+        roadmap.title = title;
+        await roadmapRepo.save(roadmap);
+        return res.status(200).json({ message: "Roadmap updated successfully", roadmap });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
