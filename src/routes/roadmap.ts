@@ -1,12 +1,14 @@
 import { Router } from "express";
 import protectRoute from "../middleware/auth";
-import {roadmap} from "../controllers/Testroudmap.controller"
-import { getAllRoadmap, getRoadmapById } from "../controllers/Testroudmap.controller";
-
+import { roadmap, getAllRoadmap, getRoadmapById, updateRoadmap, deleteRoadmap 
+} from "../controllers/Testroudmap.controller";
 
 const router = Router();
 
 router.post("/generate-roadmap", protectRoute(), roadmap);
-router.post("/roadmaps",getAllRoadmap);
-router.post("/roadmaps/:id", getRoadmapById);
+router.get("/roadmaps", protectRoute(), getAllRoadmap);
+router.get("/roadmap/:id", protectRoute(), getRoadmapById);
+router.put("/roadmap/:id", protectRoute(), updateRoadmap);
+router.delete("/roadmap/:id", protectRoute(), deleteRoadmap);
+
 export default router;
