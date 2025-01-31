@@ -5,9 +5,14 @@ import { RoleEnum, RoleType } from '../common';
 
 
 // Middleware to protect routes and check roles
+const apiKey = process.env.API_KEY
 const protectRoute = (roles: RoleType[] = [RoleEnum[2]]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
+    const apiKeyRequest =req.headers["x-api-key"] as string;
+    if(apiKeyRequest != apiKey){
+      return res.status(401).json({message:"API key required"})
+    }
 
     // Check if Authorization header exists and starts with "Bearer"
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
