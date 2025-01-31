@@ -174,29 +174,4 @@ export const deleteRoadmap = async (req: Request, res: Response) => {
     }
 };
 
-export const updateRoadmap = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { title } = req.body;
-    const roadmapRepo = AppDataSource.getRepository(Roadmap);
 
-    if (!title) {
-        return res.status(400).json({ message: "Title is required" });
-    }
-
-    try {
-        // Find the roadmap by ID
-        const roadmap = await roadmapRepo.findOne({ where: { id: String(id) } });
-
-        if (!roadmap) {
-            return res.status(404).json({ message: "Roadmap not found" });
-        }
-
-        // Update the roadmap title
-        roadmap.title = title;
-        await roadmapRepo.save(roadmap);
-        return res.status(200).json({ message: "Roadmap updated successfully", roadmap });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal server error" });
-    }
-};
